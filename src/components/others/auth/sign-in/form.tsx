@@ -70,11 +70,16 @@ export default function SignInFormFields() {
         });
 
       if (authError || !authData.user) {
-        setErrorMessage(
-          authError?.message === "Invalid login credentials"
-            ? "Password salah. Untuk login perdana PPPK, password adalah NIP Anda."
-            : authError?.message || "Gagal autentikasi"
-        );
+        if (authError?.message === "Invalid login credentials") {
+          const isEmail = data.identifier.trim().includes("@");
+          setErrorMessage(
+            isEmail
+              ? "Kata sandi yang Anda masukkan tidak sesuai. Silakan periksa kembali kredensial akun Anda."
+              : "Kata sandi yang Anda masukkan tidak sesuai. Bagi personel yang baru pertama kali mengakses sistem, silakan gunakan NIP sebagai kata sandi awal."
+          );
+        } else {
+          setErrorMessage(authError?.message || "Gagal melakukan autentikasi ke sistem.");
+        }
         return;
       }
 

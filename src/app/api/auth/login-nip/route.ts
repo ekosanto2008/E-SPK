@@ -29,7 +29,7 @@ export async function POST(request: Request) {
 
       if (pppkErr || !pppkData) {
         return NextResponse.json(
-          { error: "NIP tidak ditemukan dalam database PPPK" },
+          { error: "NIP tidak terdaftar dalam pangkalan data PPPK TNI AL. Silakan periksa kembali atau hubungi Administrator Disminpersal." },
           { status: 404 }
         );
       }
