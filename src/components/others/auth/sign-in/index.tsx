@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/utils";
+import { Suspense } from "react";
 import SignInFormFields from "./form";
 import SignInHeader from "./header";
 
@@ -12,7 +13,18 @@ export default function SignIn() {
           <SignInHeader title="E-SPK" />
 
           <div>
-            <SignInFormFields />
+            <Suspense
+              fallback={
+                <div className="space-y-5" aria-busy="true">
+                  <span className="sr-only">Loading sign-in form</span>
+                  <div className="h-10 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800" />
+                  <div className="h-10 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800" />
+                  <div className="h-11 animate-pulse rounded-lg bg-gray-100 dark:bg-gray-800" />
+                </div>
+              }
+            >
+              <SignInFormFields />
+            </Suspense>
           </div>
         </div>
       </div>
