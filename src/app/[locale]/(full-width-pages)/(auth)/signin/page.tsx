@@ -1,11 +1,16 @@
 import SignIn from "@/components/others/auth/sign-in";
 import { Metadata } from "next";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
-  title: "Next.js SignIn Page | TailAdmin - Next.js Dashboard Template",
-  description: "This is Next.js Signin Page TailAdmin Dashboard Template",
+  title: "Masuk | E-SPK Digital TNI AL",
+  description: "Halaman Masuk Sistem Informasi Surat Perjanjian Kerja PPPK TNI AL",
 };
 
 export default function SignInPage() {
-  return <SignIn />;
+  return (
+    <Suspense fallback={null}>
+      <SignIn />
+    </Suspense>
+  );
 }

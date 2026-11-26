@@ -2,6 +2,7 @@
 
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -14,8 +15,14 @@ import { Field, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase/client";
 import { formatIndonesianDate, formatSpkOpeningDate } from "@/utils/spk-date-formatter";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { BatchGenerateInput, PppkRecord } from "./types";
+import {
+  BATAS_USIA_PENSIUN,
+  calculateAge,
+  formatBirthDateShort,
+  getBirthDateFromNip,
+} from "./utils";
 
 interface BatchGenerateDialogProps {
   open: boolean;
@@ -32,6 +39,7 @@ export default function BatchGenerateDialog({
 }: BatchGenerateDialogProps) {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [pensionConfirmed, setPensionConfirmed] = useState(false);
 
   const [form, setForm] = useState<BatchGenerateInput>({
     nomor_surat: "",
@@ -41,6 +49,14 @@ export default function BatchGenerateDialog({
     kepmenhan_nomor: "",
     kepmenhan_tanggal: "",
   });
+
+  // Reset checkbox konfirmasi saat dialog dibuka kembali
+  useEffect(() => {
+    if (open) {
+      setPensionConfirmed(false);
+      setErrorMsg(null);
+    }
+  }, [open]);
 
   // Ambil nilai bawaan Nomor & Tanggal Kepmenhan dari setting aktif
   useEffect(() => {
@@ -64,6 +80,47 @@ export default function BatchGenerateDialog({
     }
   }, [open]);
 
+  // Evaluasi batas usia pensiun untuk seluruh PPPK terpilih
+  const pensionAudit = useMemo(() => {
+    const endContractDate = form.masa_kerja_selesai
+      ? new Date(form.masa_kerja_selesai)
+      : null;
+
+    const items = selectedPppks.map((p) => {
+      const birthDate = getBirthDateFromNip(p.nip, p.tanggal_lahir);
+      const currentAge = calculateAge(birthDate);
+      const projectedAge =
+        birthDate && endContractDate && !isNaN(endContractDate.getTime())
+          ? calculateAge(birthDate, endContractDate)
+          : null;
+
+      const isAlreadyPension = currentAge !== null && currentAge >= BATAS_USIA_PENSIUN;
+      const isNearingPension = currentAge !== null && currentAge === BATAS_USIA_PENSIUN - 1;
+      const willExceedInContract =
+        !isAlreadyPension &&
+        projectedAge !== null &&
+        projectedAge >= BATAS_USIA_PENSIUN;
+
+      return {
+        pppk: p,
+        birthDate,
+        currentAge,
+        projectedAge,
+        isAlreadyPension,
+        isNearingPension,
+        willExceedInContract,
+        needsAttention: isAlreadyPension || isNearingPension || willExceedInContract,
+      };
+    });
+
+    const affected = items.filter((i) => i.needsAttention);
+    return {
+      items,
+      affected,
+      hasIssues: affected.length > 0,
+    };
+  }, [selectedPppks, form.masa_kerja_selesai]);
+
   // Cek apakah ada PPPK yang sedang memiliki SPK aktif berjalan (belum selesai/expired)
   const inProgressList = selectedPppks.filter(
     (p) =>
@@ -84,6 +141,14 @@ export default function BatchGenerateDialog({
       !form.kepmenhan_tanggal
     ) {
       setErrorMsg("Semua kolom bertanda bintang (*) wajib diisi.");
+      return;
+    }
+
+    // Validasi usia pensiun: wajib konfirmasi jika ada personel yang mendekati/melampaui pensiun
+    if (pensionAudit.hasIssues && !pensionConfirmed) {
+      setErrorMsg(
+        `Validasi Batas Usia Pensiun: Terdapat ${pensionAudit.affected.length} personel yang mendekati atau melampaui usia pensiun (${BATAS_USIA_PENSIUN} tahun). Harap periksa rincian di bawah dan berikan tanda centang persetujuan validasi.`
+      );
       return;
     }
 
@@ -116,12 +181,12 @@ export default function BatchGenerateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
         <form onSubmit={handleSubmit}>
           <DialogHeader>
             <DialogTitle>Buat SPK Baru untuk {selectedPppks.length} PPPK</DialogTitle>
             <DialogDescription>
-              Nomor surat dan masa perjanjian kerja berikut akan berlaku untuk seluruh PPPK yang dipilih.
+              Penerbitan surat perjanjian kerja perpanjangan kontrak bagi seluruh personel terpilih.
             </DialogDescription>
           </DialogHeader>
 
@@ -132,10 +197,92 @@ export default function BatchGenerateDialog({
               </Alert>
             )}
 
+            {/* Peringatan SPK yang Sedang Berjalan */}
             {inProgressList.length > 0 && (
               <Alert className="border-amber-200 bg-amber-50 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300 p-3 text-xs">
-                ⚠️ <strong>Peringatan:</strong> {inProgressList.length} PPPK masih memiliki SPK aktif/sedang berproses. Melanjutkan akan membatalkan SPK berjalan tersebut dan menggantinya dengan SPK baru ini.
+                ⚠️ <strong>Peringatan SPK Berjalan:</strong> {inProgressList.length} PPPK masih memiliki SPK aktif/sedang berproses. Melanjutkan akan mengganti SPK berjalan tersebut dengan SPK baru ini.
               </Alert>
+            )}
+
+            {/* Validasi Batas Usia Pensiun (BUP 58 Tahun) */}
+            {pensionAudit.hasIssues && (
+              <div className="rounded-2xl border-2 border-amber-300 bg-amber-50/90 p-4 dark:border-amber-700/60 dark:bg-amber-950/20 space-y-3">
+                <div className="flex items-start gap-2.5">
+                  <span className="text-xl shrink-0">⚠️</span>
+                  <div>
+                    <h4 className="text-sm font-bold text-amber-900 dark:text-amber-200">
+                      Validasi Batas Usia Pensiun (BUP {BATAS_USIA_PENSIUN} Tahun)
+                    </h4>
+                    <p className="text-xs text-amber-800 dark:text-amber-300 mt-0.5">
+                      Sistem mendeteksi <strong>{pensionAudit.affected.length} personel</strong> yang mendekati atau melampaui usia pensiun (dihitung berdasarkan tanggal lahir pada NIP):
+                    </p>
+                  </div>
+                </div>
+
+                {/* Daftar PPPK yang Terkena Validasi Pensiun */}
+                <div className="max-h-48 overflow-y-auto rounded-xl border border-amber-200 bg-white/95 dark:border-amber-900/50 dark:bg-gray-900/90 divide-y divide-amber-100 dark:divide-gray-800">
+                  {pensionAudit.affected.map((item) => (
+                    <div key={item.pppk.id} className="p-2.5 text-xs flex items-center justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-semibold text-gray-900 dark:text-white">
+                            {item.pppk.nama}
+                          </span>
+                          <span className="font-mono text-[11px] text-gray-500">
+                            (NIP: {item.pppk.nip})
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-gray-500 mt-0.5">
+                          Lahir: {formatBirthDateShort(item.birthDate)} &bull; Umur sekarang:{" "}
+                          <strong className="text-gray-800 dark:text-gray-200">
+                            {item.currentAge} tahun
+                          </strong>
+                          {item.projectedAge !== null && item.projectedAge !== item.currentAge && (
+                            <span>
+                              {" "}➔ Di akhir kontrak:{" "}
+                              <strong className={item.projectedAge >= BATAS_USIA_PENSIUN ? "text-red-600 font-bold" : ""}>
+                                {item.projectedAge} tahun
+                              </strong>
+                            </span>
+                          )}
+                        </p>
+                      </div>
+
+                      <div className="shrink-0 text-end">
+                        {item.isAlreadyPension ? (
+                          <span className="inline-flex rounded-full bg-red-100 text-red-800 border border-red-300 px-2 py-0.5 text-[10px] font-bold">
+                            Sudah BUP ({item.currentAge} Th)
+                          </span>
+                        ) : item.isNearingPension ? (
+                          <span className="inline-flex rounded-full bg-amber-100 text-amber-800 border border-amber-300 px-2 py-0.5 text-[10px] font-bold">
+                            Mendekati BUP (57 Th)
+                          </span>
+                        ) : (
+                          <span className="inline-flex rounded-full bg-purple-100 text-purple-800 border border-purple-300 px-2 py-0.5 text-[10px] font-bold">
+                            Lewat BUP di Kontrak
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Checkbox Konfirmasi Validasi */}
+                <div className="flex items-start gap-2.5 pt-1">
+                  <Checkbox
+                    id="confirm-pension-checkbox"
+                    checked={pensionConfirmed}
+                    onCheckedChange={(checked) => setPensionConfirmed(Boolean(checked))}
+                    className="mt-0.5"
+                  />
+                  <label
+                    htmlFor="confirm-pension-checkbox"
+                    className="text-xs font-semibold text-amber-950 dark:text-amber-200 cursor-pointer select-none leading-relaxed"
+                  >
+                    Saya mengonfirmasi telah memvalidasi batas usia pensiun dan menyetujui penerbitan perpanjangan SPK bagi personel di atas.
+                  </label>
+                </div>
+              </div>
             )}
 
             <Field>
@@ -246,4 +393,3 @@ export default function BatchGenerateDialog({
     </Dialog>
   );
 }
-

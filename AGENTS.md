@@ -85,6 +85,136 @@ src/
 - Reuse existing `@utility` classes in `globals.css` (`menu-item-*`, `menu-dropdown-*`, `nav-icon-item-*`, `docs-menu-item-*`, `docs-border-item-*`, `custom-scrollbar`, `no-scrollbar`) before adding new ones.
 - Third-party overrides (ApexCharts, flatpickr, Swiper, simplebar, Prism, FullCalendar) go in the "third-party libraries CSS" section at the bottom of `globals.css`, in the existing `@apply` style. Their base CSS is imported in the root `layout.tsx`.
 
+## AI Agent Development Rules
+
+### 1. Core Principle
+
+Your primary responsibility is to continue and improve the existing project without disrupting its current implementation.
+
+IMPORTANT: Do not rebuild, redesign, refactor, or modify existing implementations unless explicitly instructed by the user.
+
+Always prioritize maintaining the existing project structure, coding patterns, architecture, and behavior.
+
+### 2. Preserve Existing Code
+
+- Do not modify, delete, or rewrite existing code unnecessarily.
+- Do not remove existing components, files, functions, or logic.
+- Do not replace existing implementations with different approaches without explicit permission.
+- Do not perform unnecessary refactoring or code optimization.
+- Do not change existing dependencies or package versions unless explicitly requested.
+- Only modify the specific parts required to complete the requested task.
+- Ensure all existing functionality continues to work after every change.
+
+### 3. Preserve UI/UX Design
+
+- Do not change the existing UI design or layout.
+- Do not redesign existing pages or components.
+- Do not change colors, typography, spacing, sizing, borders, shadows, or animations.
+- Do not change existing responsive behavior.
+- Do not move, remove, or rearrange existing UI elements.
+- Do not introduce a new design system or styling approach.
+- Follow the existing visual design and component patterns when creating new UI elements.
+
+Any new UI must seamlessly match the existing application's design and user experience.
+
+### 4. Preserve Existing Functionality
+
+- Never break, remove, or alter existing features.
+- Preserve all existing business logic and application workflows.
+- Do not change API integrations, authentication, authorization, or database logic unless explicitly requested.
+- Maintain existing form validations and submission behavior.
+- Preserve routing, navigation, and state management.
+- Ensure existing buttons, links, menus, and interactive elements continue functioning as intended.
+
+### 5. Next.js Project Guidelines
+
+- Follow the existing Next.js architecture and project conventions.
+- Respect the current App Router or Pages Router implementation.
+- Maintain existing Server Components and Client Components boundaries.
+- Follow the existing TypeScript and JavaScript conventions.
+- Reuse existing components, hooks, utilities, and services whenever possible.
+- Follow the existing API routes, server actions, and data-fetching patterns.
+- Do not introduce unnecessary libraries or dependencies.
+- Preserve existing environment variable names and configurations.
+
+### 6. Development Approach
+
+Before implementing any changes:
+
+- Inspect the existing project structure.
+- Understand the relevant components and their dependencies.
+- Identify existing functions and implementations related to the requested task.
+- Determine the smallest possible changes needed.
+- Reuse existing code whenever possible.
+- Implement only what is necessary.
+
+Do not make assumptions about how the project works. Inspect the existing implementation first.
+
+### 7. Modification Restrictions
+
+You are only allowed to:
+
+- Add new functionality requested by the user.
+- Extend existing functionality without breaking its current behavior.
+- Add new components when necessary.
+- Add new files when necessary.
+- Fix bugs directly related to the requested task.
+- Make minimal changes required for compatibility.
+
+You are NOT allowed to:
+
+- Redesign existing pages.
+- Rewrite the entire application.
+- Change existing UI/UX.
+- Remove existing features.
+- Change unrelated code.
+- Rename existing files, components, variables, or functions unnecessarily.
+- Change the project's architecture without permission.
+
+### 8. Code Quality
+
+- Write clean, readable, and maintainable code.
+- Follow the existing coding style.
+- Avoid unnecessary duplication.
+- Use existing utilities and shared components.
+- Maintain proper TypeScript types where applicable.
+- Avoid introducing unnecessary complexity.
+- Handle errors appropriately.
+- Keep changes minimal and focused.
+
+### 9. Testing and Verification
+
+After implementing changes:
+
+- Verify that the requested functionality works correctly.
+- Check that existing functionality remains unaffected.
+- Check for TypeScript errors and linting issues when applicable.
+- Verify that the application builds successfully when possible.
+- Check responsive behavior if UI changes are involved.
+- Do not claim that tests or builds passed unless they were actually executed.
+
+### 10. Communication and Reporting
+
+After completing each task, provide a short report containing:
+
+- What was implemented.
+- Which files were modified or added.
+- What existing functionality was preserved.
+- Any issues or limitations encountered.
+
+If a requested change requires modifying existing functionality, UI/UX, layout, or architecture, ask for user confirmation before proceeding.
+
+### 11. Most Important Rule
+
+**CONTINUE, DON'T REBUILD.**
+
+Your role is to continue developing the existing Next.js project, not to create a new implementation or change the developer's original vision.
+
+- Preserve everything that already works.
+- Make only the necessary changes.
+- Do not modify existing code, UI/UX, layouts, or functionality unless explicitly instructed by the user.
+- When in doubt, leave the existing implementation untouched and ask for clarification.
+
 <!-- BEGIN:nextjs-agent-rules -->
 
 ## This is NOT the Next.js you know
