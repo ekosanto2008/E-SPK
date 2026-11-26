@@ -174,6 +174,20 @@ export default function PppkManagement({
   };
 
   const selectedPppkObjects = records.filter((r) => selectedIds.includes(r.id));
+  const selectedActiveCount = selectedPppkObjects.filter(
+    (r) => getKontrakStatus(r.kontrak_selesai).status === "aktif"
+  ).length;
+
+  const handleExcludeActive = () => {
+    const nonActiveIds = records
+      .filter(
+        (r) =>
+          selectedIds.includes(r.id) &&
+          getKontrakStatus(r.kontrak_selesai).status !== "aktif"
+      )
+      .map((r) => r.id);
+    setSelectedIds(nonActiveIds);
+  };
 
   // Render sort icon helper
   const renderSortIndicator = (field: SortField) => {
@@ -269,7 +283,24 @@ export default function PppkManagement({
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            {selectedActiveCount > 0 && (
+              <div className="flex items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-2.5 py-1 text-xs text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-300">
+                <span>⚠️</span>
+                <span>
+                  <strong>{selectedActiveCount}</strong> Kontrak Aktif Tercentang
+                </span>
+                <button
+                  type="button"
+                  onClick={handleExcludeActive}
+                  className="underline hover:text-amber-950 dark:hover:text-amber-100 font-semibold cursor-pointer ms-0.5"
+                  title="Hapus centang untuk personel yang masa kontrak kerjanya masih aktif"
+                >
+                  (Kecualikan)
+                </button>
+              </div>
+            )}
+
             <Button
               variant="outline"
               size="sm"

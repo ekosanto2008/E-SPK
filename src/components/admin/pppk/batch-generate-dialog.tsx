@@ -22,6 +22,7 @@ import {
   calculateAge,
   formatBirthDateShort,
   getBirthDateFromNip,
+  getKontrakStatus,
 } from "./utils";
 
 interface BatchGenerateDialogProps {
@@ -40,6 +41,7 @@ export default function BatchGenerateDialog({
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [pensionConfirmed, setPensionConfirmed] = useState(false);
+  const [activeConfirmed, setActiveConfirmed] = useState(false);
 
   const [form, setForm] = useState<BatchGenerateInput>({
     nomor_surat: "",
@@ -54,6 +56,7 @@ export default function BatchGenerateDialog({
   useEffect(() => {
     if (open) {
       setPensionConfirmed(false);
+      setActiveConfirmed(false);
       setErrorMsg(null);
     }
   }, [open]);
@@ -121,6 +124,13 @@ export default function BatchGenerateDialog({
     };
   }, [selectedPppks, form.masa_kerja_selesai]);
 
+  // Cek apakah ada PPPK yang masa kontrak kerjanya masih aktif (> 3 bulan tersisa)
+  const activeContractsList = useMemo(() => {
+    return selectedPppks.filter(
+      (p) => getKontrakStatus(p.kontrak_selesai).status === "aktif"
+    );
+  }, [selectedPppks]);
+
   // Cek apakah ada PPPK yang sedang memiliki SPK aktif berjalan (belum selesai/expired)
   const inProgressList = selectedPppks.filter(
     (p) =>
@@ -141,6 +151,14 @@ export default function BatchGenerateDialog({
       !form.kepmenhan_tanggal
     ) {
       setErrorMsg("Semua kolom bertanda bintang (*) wajib diisi.");
+      return;
+    }
+
+    // Validasi kontrak masih aktif: wajib konfirmasi jika ada personel yang masa kontraknya belum habis
+    if (activeContractsList.length > 0 && !activeConfirmed) {
+      setErrorMsg(
+        `Validasi Kontrak Aktif: Terdapat ${activeContractsList.length} personel terpilih yang masa kontrak kerjanya masih berstatus AKTIF. Harap periksa rincian di bawah dan berikan tanda centang persetujuan validasi jika ingin menerbitkan SPK perpanjangan lebih awal.`
+      );
       return;
     }
 
@@ -202,6 +220,65 @@ export default function BatchGenerateDialog({
               <Alert className="border-amber-200 bg-amber-50 text-amber-800 dark:bg-amber-500/15 dark:text-amber-300 p-3 text-xs">
                 ⚠️ <strong>Peringatan SPK Berjalan:</strong> {inProgressList.length} PPPK masih memiliki SPK aktif/sedang berproses. Melanjutkan akan mengganti SPK berjalan tersebut dengan SPK baru ini.
               </Alert>
+            )}
+
+            {/* Validasi Personel yang Kontrak Kerjanya Masih Aktif */}
+            {activeContractsList.length > 0 && (
+              <div className="rounded-2xl border-2 border-emerald-400 bg-emerald-50/90 p-4 dark:border-emerald-600/60 dark:bg-emerald-950/20 space-y-3">
+                <div className="flex items-start gap-2.5">
+                  <span className="text-xl shrink-0">⚠️</span>
+                  <div>
+                    <h4 className="text-sm font-bold text-emerald-950 dark:text-emerald-200">
+                      Validasi Kontrak Masih Aktif ({activeContractsList.length} Personel Terpilih)
+                    </h4>
+                    <p className="text-xs text-emerald-800 dark:text-emerald-300 mt-0.5">
+                      Sistem mendeteksi ada personel yang masa kontrak kerjanya saat ini <strong>masih aktif</strong> (belum memasuki periode habis kontrak &lt; 3 bulan):
+                    </p>
+                  </div>
+                </div>
+
+                <div className="max-h-40 overflow-y-auto rounded-xl border border-emerald-200 bg-white/95 dark:border-emerald-900/50 dark:bg-gray-900/90 divide-y divide-emerald-100 dark:divide-gray-800">
+                  {activeContractsList.map((p) => (
+                    <div key={p.id} className="p-2.5 text-xs flex items-center justify-between gap-2">
+                      <div>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span className="font-semibold text-gray-900 dark:text-white">
+                            {p.nama}
+                          </span>
+                          <span className="font-mono text-[11px] text-gray-500">
+                            (NIP: {p.nip})
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-gray-500 mt-0.5">
+                          Masa kontrak saat ini berlaku s.d.{" "}
+                          <strong className="text-emerald-700 dark:text-emerald-400">
+                            {formatIndonesianDate(p.kontrak_selesai)}
+                          </strong>
+                        </p>
+                      </div>
+                      <span className="shrink-0 inline-flex rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300 px-2 py-0.5 text-[10px] font-bold">
+                        Masih Aktif
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Checkbox Konfirmasi Validasi Kontrak Aktif */}
+                <div className="flex items-start gap-2.5 pt-1">
+                  <Checkbox
+                    id="confirm-active-checkbox"
+                    checked={activeConfirmed}
+                    onCheckedChange={(checked) => setActiveConfirmed(Boolean(checked))}
+                    className="mt-0.5"
+                  />
+                  <label
+                    htmlFor="confirm-active-checkbox"
+                    className="text-xs font-semibold text-emerald-950 dark:text-emerald-200 cursor-pointer select-none leading-relaxed"
+                  >
+                    Saya mengonfirmasi untuk menerbitkan perpanjangan SPK baru lebih awal bagi personel yang kontrak kerjanya masih berstatus aktif di atas.
+                  </label>
+                </div>
+              </div>
             )}
 
             {/* Validasi Batas Usia Pensiun (BUP 58 Tahun) */}
