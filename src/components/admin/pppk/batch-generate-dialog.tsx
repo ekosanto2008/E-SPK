@@ -40,7 +40,6 @@ export default function BatchGenerateDialog({
 }: BatchGenerateDialogProps) {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [pensionConfirmed, setPensionConfirmed] = useState(false);
   const [activeConfirmed, setActiveConfirmed] = useState(false);
 
   const [form, setForm] = useState<BatchGenerateInput>({
@@ -55,7 +54,6 @@ export default function BatchGenerateDialog({
   // Reset checkbox konfirmasi saat dialog dibuka kembali
   useEffect(() => {
     if (open) {
-      setPensionConfirmed(false);
       setActiveConfirmed(false);
       setErrorMsg(null);
     }
@@ -158,14 +156,6 @@ export default function BatchGenerateDialog({
     if (activeContractsList.length > 0 && !activeConfirmed) {
       setErrorMsg(
         `Validasi Kontrak Aktif: Terdapat ${activeContractsList.length} personel terpilih yang masa kontrak kerjanya masih berstatus AKTIF. Harap periksa rincian di bawah dan berikan tanda centang persetujuan validasi jika ingin menerbitkan SPK perpanjangan lebih awal.`
-      );
-      return;
-    }
-
-    // Validasi usia pensiun: wajib konfirmasi jika ada personel yang mendekati/melampaui pensiun
-    if (pensionAudit.hasIssues && !pensionConfirmed) {
-      setErrorMsg(
-        `Validasi Batas Usia Pensiun: Terdapat ${pensionAudit.affected.length} personel yang mendekati atau melampaui usia pensiun (${BATAS_USIA_PENSIUN} tahun). Harap periksa rincian di bawah dan berikan tanda centang persetujuan validasi.`
       );
       return;
     }
@@ -342,22 +332,6 @@ export default function BatchGenerateDialog({
                       </div>
                     </div>
                   ))}
-                </div>
-
-                {/* Checkbox Konfirmasi Validasi */}
-                <div className="flex items-start gap-2.5 pt-1">
-                  <Checkbox
-                    id="confirm-pension-checkbox"
-                    checked={pensionConfirmed}
-                    onCheckedChange={(checked) => setPensionConfirmed(Boolean(checked))}
-                    className="mt-0.5"
-                  />
-                  <label
-                    htmlFor="confirm-pension-checkbox"
-                    className="text-xs font-semibold text-amber-950 dark:text-amber-200 cursor-pointer select-none leading-relaxed"
-                  >
-                    Saya mengonfirmasi telah memvalidasi batas usia pensiun dan menyetujui penerbitan perpanjangan SPK bagi personel di atas.
-                  </label>
                 </div>
               </div>
             )}
