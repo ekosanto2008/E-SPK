@@ -2,7 +2,6 @@
 
 import { Alert } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -40,7 +39,6 @@ export default function BatchGenerateDialog({
 }: BatchGenerateDialogProps) {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [activeConfirmed, setActiveConfirmed] = useState(false);
 
   const [form, setForm] = useState<BatchGenerateInput>({
     nomor_surat: "",
@@ -51,10 +49,9 @@ export default function BatchGenerateDialog({
     kepmenhan_tanggal: "",
   });
 
-  // Reset checkbox konfirmasi saat dialog dibuka kembali
+  // Reset error saat dialog dibuka kembali
   useEffect(() => {
     if (open) {
-      setActiveConfirmed(false);
       setErrorMsg(null);
     }
   }, [open]);
@@ -152,14 +149,6 @@ export default function BatchGenerateDialog({
       return;
     }
 
-    // Validasi kontrak masih aktif: wajib konfirmasi jika ada personel yang masa kontraknya belum habis
-    if (activeContractsList.length > 0 && !activeConfirmed) {
-      setErrorMsg(
-        `Validasi Kontrak Aktif: Terdapat ${activeContractsList.length} personel terpilih yang masa kontrak kerjanya masih berstatus AKTIF. Harap periksa rincian di bawah dan berikan tanda centang persetujuan validasi jika ingin menerbitkan SPK perpanjangan lebih awal.`
-      );
-      return;
-    }
-
     setLoading(true);
     setErrorMsg(null);
 
@@ -251,22 +240,6 @@ export default function BatchGenerateDialog({
                       </span>
                     </div>
                   ))}
-                </div>
-
-                {/* Checkbox Konfirmasi Validasi Kontrak Aktif */}
-                <div className="flex items-start gap-2.5 pt-1">
-                  <Checkbox
-                    id="confirm-active-checkbox"
-                    checked={activeConfirmed}
-                    onCheckedChange={(checked) => setActiveConfirmed(Boolean(checked))}
-                    className="mt-0.5"
-                  />
-                  <label
-                    htmlFor="confirm-active-checkbox"
-                    className="text-xs font-semibold text-emerald-950 dark:text-emerald-200 cursor-pointer select-none leading-relaxed"
-                  >
-                    Saya mengonfirmasi untuk menerbitkan perpanjangan SPK baru lebih awal bagi personel yang kontrak kerjanya masih berstatus aktif di atas.
-                  </label>
                 </div>
               </div>
             )}
