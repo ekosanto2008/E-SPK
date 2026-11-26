@@ -327,7 +327,7 @@ export default function PppkManagement({
                   title="Klik untuk mengurutkan berdasarkan Umur"
                 >
                   <span className="flex items-center">
-                    Umur (NIP) {renderSortIndicator("umur")}
+                    Umur {renderSortIndicator("umur")}
                   </span>
                 </TableCell>
 
